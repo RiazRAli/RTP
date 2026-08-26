@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Process Yield Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Fraunces:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#ffffff;--bg-soft:#f8fafc;--bg-card:#ffffff;--bg-input:#f1f5f9;
+    --border:#e2e8f0;--border-strong:#cbd5e1;
+    --shadow-sm:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md:0 4px 12px rgba(0,0,0,0.07),0 2px 4px rgba(0,0,0,0.04);
+    --shadow-lg:0 10px 30px rgba(0,0,0,0.08),0 4px 8px rgba(0,0,0,0.04);
+    --text-primary:#0f172a;--text-secondary:#475569;--text-muted:#94a3b8;--text-label:#334155;
+    --cyan:#0891b2;--cyan-light:#ecfeff;--cyan-mid:#22d3ee;
+    --violet:#7c3aed;--violet-light:#f5f3ff;--violet-mid:#a78bfa;
+    --amber:#d97706;--amber-light:#fffbeb;--amber-mid:#fbbf24;
+    --emerald:#059669;--emerald-light:#ecfdf5;
+    --rose:#e11d48;--rose-light:#fff1f2;
+    --blue:#2563eb;--blue-light:#eff6ff;--orange:#ea580c;--teal:#0d9488;--teal-light:#f0fdfa;
+    --slate:#475569;--slate-light:#f1f5f9;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--text-primary);min-height:100vh;-webkit-font-smoothing:antialiased;}
+  .container{max-width:1200px;margin:0 auto;padding:0 28px;}
+
+  .hero{background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 50%,#0c4a6e 100%);padding:48px 0 44px;position:relative;overflow:hidden;}
+  .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(34,211,238,0.15) 0%,transparent 60%),radial-gradient(ellipse at 70% 80%,rgba(124,58,237,0.1) 0%,transparent 60%);pointer-events:none;}
+  .hero::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:40px;background:var(--bg);clip-path:ellipse(55% 100% at 50% 100%);}
+  .hero-inner{position:relative;z-index:1;text-align:center;}
+  .hero-badge{display:inline-flex;align-items:center;gap:8px;padding:5px 16px;border-radius:100px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);font-size:0.78rem;font-weight:700;color:rgba(255,255,255,0.85);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:18px;backdrop-filter:blur(8px);}
+  .hero-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--cyan-mid);box-shadow:0 0 8px var(--cyan-mid);animation:pulse 2s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+  .hero h1{font-family:'Fraunces',serif;font-size:clamp(2rem,4.5vw,3.2rem);font-weight:900;color:#fff;line-height:1.15;margin-bottom:12px;}
+  .hero h1 span{background:linear-gradient(135deg,#22d3ee,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .hero p{font-size:1.1rem;color:rgba(255,255,255,0.65);max-width:680px;margin:0 auto;line-height:1.6;}
+
+  .control-bar{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;padding:28px 0 8px;}
+  .control-group{display:flex;align-items:center;gap:12px;background:var(--bg-card);padding:12px 22px;border-radius:14px;border:1px solid var(--border);box-shadow:var(--shadow-sm);}
+  .control-group label{font-weight:700;font-size:0.95rem;color:var(--text-label);white-space:nowrap;}
+  .control-group input[type=range]{-webkit-appearance:none;appearance:none;width:180px;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--cyan),var(--violet));outline:none;cursor:pointer;}
+  .control-group input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:24px;height:24px;border-radius:50%;background:#fff;border:3px solid var(--cyan);box-shadow:0 2px 6px rgba(0,0,0,0.15);cursor:pointer;transition:transform 0.15s;}
+  .control-group input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.12);}
+  .control-group input[type=range]:focus-visible{box-shadow:0 0 0 3px rgba(8,145,178,0.3);}
+  .step-count-badge{font-family:'JetBrains Mono',monospace;font-size:1.5rem;font-weight:800;color:var(--cyan);background:var(--cyan-light);width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;}
+  .units-control input[type=number]{width:100px;background:var(--bg-input);border:2px solid var(--border);border-radius:10px;padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:1.05rem;font-weight:600;color:var(--text-primary);text-align:center;outline:none;transition:all 0.2s;}
+  .units-control input[type=number]:focus{border-color:var(--cyan);background:var(--cyan-light);box-shadow:0 0 0 3px rgba(8,145,178,0.1);}
+  .shift-control{gap:10px;cursor:pointer;}
+  .shift-control input[type=checkbox]{width:18px;height:18px;accent-color:var(--orange);cursor:pointer;}
+  .shift-control label{cursor:pointer;font-size:0.9rem;}
+
+  .pipeline-wrap{padding:24px 0 10px;display:flex;align-items:flex-start;justify-content:center;gap:4px;flex-wrap:wrap;}
+  .pipe-step{display:flex;align-items:center;gap:4px;}
+  .pipe-node{width:80px;height:100px;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:0.85rem;position:relative;box-shadow:var(--shadow-md);transition:transform 0.2s;gap:4px;}
+  .pipe-node:hover{transform:scale(1.06);}
+  .pipe-node .node-label{font-size:0.72rem;font-weight:700;opacity:0.85;letter-spacing:0.05em;}
+  .pipe-node .node-yield{font-family:'JetBrains Mono',monospace;font-size:0.9rem;font-weight:800;}
+  .pipe-node .node-units{font-family:'JetBrains Mono',monospace;font-size:0.65rem;font-weight:600;opacity:0.75;margin-top:2px;}
+  .pipe-arrow{font-size:1.3rem;color:var(--border-strong);margin:0 2px;align-self:center;}
+  .pipe-node-bookend{width:68px;height:88px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:0.75rem;box-shadow:var(--shadow-md);gap:2px;}
+  .pipe-node-bookend .node-yield{font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:800;}
+  .pipe-caption{text-align:center;font-size:0.76rem;color:var(--text-muted);padding-bottom:6px;}
+
+  .table-section{margin:22px 0 0;background:var(--bg-card);border-radius:18px;border:1px solid var(--border);box-shadow:var(--shadow-md);overflow:hidden;}
+  .table-header-bar{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:var(--bg-soft);border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px;}
+  .table-header-bar h2{font-size:1.1rem;font-weight:800;color:var(--text-primary);display:flex;align-items:center;gap:8px;}
+  .thb-icon{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;background:var(--cyan-light);color:var(--cyan);font-size:0.85rem;font-weight:900;}
+  .table-header-bar .legend{display:flex;gap:16px;font-size:0.78rem;font-weight:600;color:var(--text-muted);flex-wrap:wrap;}
+  .legend-dot{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:middle;}
+
+  .table-scroll{overflow-x:auto;}
+  .data-table{width:100%;min-width:1120px;border-collapse:collapse;}
+  .data-table thead th{padding:14px 12px;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);text-align:center;border-bottom:2px solid var(--border);background:var(--bg-soft);white-space:nowrap;}
+  .data-table thead th.input-col{color:var(--rose);}
+  .data-table thead th.input-col::after{content:' *';font-size:0.7rem;}
+  .data-table thead th .sub{display:block;font-size:0.62rem;font-weight:600;letter-spacing:0.02em;text-transform:none;color:var(--text-muted);opacity:0.85;}
+  .data-table thead th:first-child{width:58px;text-align:center;}
+  .data-table tbody tr.data-row{transition:background 0.15s;}
+  .data-table tbody tr.data-row:hover{background:rgba(8,145,178,0.03);}
+  .data-table tbody tr.data-row td{border-bottom:1px solid var(--border);}
+  .data-table tbody tr.data-row.has-warn td{border-bottom:none;}
+  .data-table td{padding:12px 10px;text-align:center;vertical-align:middle;}
+
+  .warn-row td{border-bottom:1px solid var(--border);padding:0 10px 12px;text-align:left;}
+  .warn-box{background:var(--rose-light);border:1px solid rgba(225,29,72,0.2);border-left:3px solid var(--rose);border-radius:8px;padding:8px 12px;font-size:0.82rem;color:#9f1239;display:flex;flex-direction:column;gap:4px;}
+  .warn-box strong{font-weight:800;}
+  .warn-box.soft{background:var(--amber-light);border-color:rgba(217,119,6,0.22);border-left-color:var(--amber);color:#92400e;}
+
+  .step-pill{width:40px;height:40px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:800;font-size:0.95rem;color:#fff;margin:0 auto;}
+  .auto-cell{font-family:'JetBrains Mono',monospace;font-size:0.92rem;font-weight:600;color:var(--text-secondary);background:var(--bg-soft);border-radius:8px;padding:9px 10px;display:inline-block;min-width:52px;border:1px dashed var(--border);}
+  .edit-input{width:74px;background:#fff;border:2px solid var(--border);border-radius:9px;padding:10px 6px;font-family:'JetBrains Mono',monospace;font-size:0.92rem;font-weight:600;color:var(--text-primary);text-align:center;outline:none;transition:all 0.2s;}
+  .edit-input:focus{border-color:var(--cyan);background:var(--cyan-light);box-shadow:0 0 0 3px rgba(8,145,178,0.1);}
+  .edit-input.scrap-input:focus{border-color:var(--rose);background:var(--rose-light);box-shadow:0 0 0 3px rgba(225,29,72,0.08);}
+  .edit-input.rework-input:focus{border-color:var(--amber);background:var(--amber-light);box-shadow:0 0 0 3px rgba(217,119,6,0.08);}
+  .edit-input.rwscrap-input:focus{border-color:var(--orange);background:#fff7ed;box-shadow:0 0 0 3px rgba(234,88,12,0.08);}
+  .edit-input.defect-input{border-style:dashed;}
+  .edit-input.defect-input:focus{border-color:var(--teal);border-style:solid;background:var(--teal-light);box-shadow:0 0 0 3px rgba(13,148,136,0.1);}
+  .edit-input.invalid{border-color:var(--rose);background:var(--rose-light);}
+
+  .result-badge{font-family:'JetBrains Mono',monospace;font-size:0.9rem;font-weight:700;padding:8px 10px;border-radius:8px;display:inline-block;min-width:74px;}
+  .result-badge.fty-badge{background:var(--cyan-light);color:var(--cyan);border:1px solid rgba(8,145,178,0.15);}
+  .result-badge.ipy-badge{background:var(--violet-light);color:var(--violet);border:1px solid rgba(124,58,237,0.12);}
+  .result-badge.poisson-badge{background:var(--amber-light);color:var(--amber);border:1px solid rgba(217,119,6,0.12);}
+  .result-badge.dpu-badge{background:var(--bg-soft);color:var(--text-secondary);border:1px solid var(--border);font-size:0.8rem;}
+
+  .totals-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin:24px 0 0;}
+  .derived-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:14px 0 0;}
+  .total-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:22px 16px;text-align:center;box-shadow:var(--shadow-sm);transition:all 0.25s;position:relative;overflow:hidden;}
+  .total-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-3px);}
+  .total-card .top-stripe{position:absolute;top:0;left:0;right:0;height:4px;}
+  .total-card .total-icon{width:36px;height:36px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;font-size:0.9rem;font-weight:900;color:#fff;margin-bottom:8px;}
+  .total-card .total-label{font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-muted);margin-bottom:4px;}
+  .total-card .total-sublabel{font-size:0.66rem;font-weight:600;color:var(--text-muted);opacity:0.8;margin-bottom:8px;line-height:1.4;}
+  .total-card .total-value{font-family:'JetBrains Mono',monospace;font-size:1.7rem;font-weight:800;line-height:1.2;}
+  .total-card .total-formula{font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--text-muted);margin-top:8px;line-height:1.5;word-break:break-word;}
+
+  .tc-cyan .top-stripe{background:linear-gradient(90deg,var(--cyan),var(--cyan-mid));}
+  .tc-cyan .total-value{color:var(--cyan);}
+  .tc-cyan .total-icon{background:var(--cyan);}
+  .tc-violet .top-stripe{background:linear-gradient(90deg,var(--violet),var(--violet-mid));}
+  .tc-violet .total-value{color:var(--violet);}
+  .tc-violet .total-icon{background:var(--violet);}
+  .tc-amber .top-stripe{background:linear-gradient(90deg,var(--amber),var(--amber-mid));}
+  .tc-amber .total-value{color:var(--amber);}
+  .tc-amber .total-icon{background:var(--amber);}
+  .tc-emerald .top-stripe{background:linear-gradient(90deg,var(--emerald),#34d399);}
+  .tc-emerald .total-value{color:var(--emerald);}
+  .tc-emerald .total-icon{background:var(--emerald);}
+  .tc-rose .top-stripe{background:linear-gradient(90deg,var(--rose),#fb7185);}
+  .tc-rose .total-value{color:var(--rose);}
+  .tc-rose .total-icon{background:var(--rose);}
+  .tc-teal .top-stripe{background:linear-gradient(90deg,var(--teal),#2dd4bf);}
+  .tc-teal .total-value{color:var(--teal);}
+  .tc-teal .total-icon{background:var(--teal);}
+  .tc-blue .top-stripe{background:linear-gradient(90deg,var(--blue),#60a5fa);}
+  .tc-blue .total-value{color:var(--blue);}
+  .tc-blue .total-icon{background:var(--blue);}
+  .tc-orange .top-stripe{background:linear-gradient(90deg,var(--orange),#fb923c);}
+  .tc-orange .total-value{color:var(--orange);}
+  .tc-orange .total-icon{background:var(--orange);}
+
+  .assumptions{margin:18px 0 0;background:var(--bg-soft);border:1px solid var(--border);border-left:4px solid var(--slate);border-radius:12px;padding:16px 20px;}
+  .assumptions h3{font-size:0.78rem;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-label);margin-bottom:8px;}
+  .assumptions ul{list-style:none;display:flex;flex-direction:column;gap:6px;}
+  .assumptions li{font-size:0.86rem;line-height:1.6;color:var(--text-secondary);padding-left:16px;position:relative;}
+  .assumptions li::before{content:'';position:absolute;left:0;top:9px;width:6px;height:6px;border-radius:2px;background:var(--border-strong);}
+  .assumptions code{font-family:'JetBrains Mono',monospace;font-size:0.82em;background:var(--bg-input);padding:1px 5px;border-radius:4px;}
+
+  .workings-section{margin:28px 0 0;background:var(--bg-card);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow-md);overflow:hidden;}
+  .workings-header{padding:16px 24px;background:var(--bg-soft);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;}
+  .workings-header h2{font-size:1.1rem;font-weight:800;display:flex;align-items:center;gap:8px;}
+  .wh-icon{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;background:var(--violet-light);color:var(--violet);font-size:0.85rem;font-weight:900;}
+  .workings-header .toggle-icon{font-size:1.2rem;color:var(--text-muted);transition:transform 0.3s;}
+  .workings-header.open .toggle-icon{transform:rotate(180deg);}
+  .workings-header:focus-visible{outline:3px solid var(--cyan);outline-offset:-3px;}
+  .workings-body{padding:20px 24px;display:none;}
+  .workings-body.show{display:block;}
+
+  .step-working{background:var(--bg-soft);border-radius:12px;padding:18px 22px;margin-bottom:12px;border-left:4px solid var(--cyan);transition:all 0.2s;overflow-x:auto;}
+  .step-working:hover{box-shadow:var(--shadow-sm);}
+  .step-working:nth-child(even){border-left-color:var(--violet);}
+  .step-working.overall-working{border-left-color:var(--emerald);background:var(--emerald-light);}
+  .step-working.skipped-working{border-left-color:var(--border-strong);opacity:0.85;}
+  .step-working h3{font-size:0.88rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;color:var(--text-label);}
+  .formula-line{font-family:'JetBrains Mono',monospace;font-size:0.85rem;line-height:2.1;color:var(--text-secondary);white-space:nowrap;}
+  .formula-line.wrap{white-space:normal;line-height:1.7;}
+  .formula-line .lbl{color:var(--text-muted);font-weight:600;}
+  .formula-line .v-cyan{color:var(--cyan);font-weight:700;}
+  .formula-line .v-violet{color:var(--violet);font-weight:700;}
+  .formula-line .v-amber{color:var(--amber);font-weight:700;}
+  .formula-line .v-emerald{color:var(--emerald);font-weight:700;}
+  .formula-line .v-rose{color:var(--rose);font-weight:700;}
+  .formula-line .v-teal{color:var(--teal);font-weight:700;}
+  .formula-line .v-blue{color:var(--blue);font-weight:700;}
+  .formula-line .v-orange{color:var(--orange);font-weight:700;}
+  .working-note{font-size:0.76rem;color:var(--text-muted);line-height:1.6;margin-top:8px;font-family:'DM Sans',sans-serif;}
+  .working-warn{font-family:'DM Sans',sans-serif;font-size:0.82rem;color:#9f1239;background:var(--rose-light);border-radius:8px;padding:8px 12px;margin-top:8px;}
+
+  .lesson-section{margin:44px 0 56px;}
+  .lesson-title{text-align:center;margin-bottom:32px;}
+  .lesson-title h2{font-family:'Fraunces',serif;font-size:2rem;font-weight:900;color:var(--text-primary);}
+  .lesson-title h2 span{background:linear-gradient(135deg,var(--cyan),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .lesson-title p{color:var(--text-secondary);font-size:1rem;margin-top:6px;}
+  .lesson-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:24px;}
+  .lesson-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:28px 24px;box-shadow:var(--shadow-sm);transition:all 0.25s;}
+  .lesson-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px);}
+  .lesson-card .card-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:900;color:#fff;margin-bottom:14px;}
+  .lesson-card:nth-child(1) .card-icon{background:var(--cyan);}
+  .lesson-card:nth-child(2) .card-icon{background:var(--violet);}
+  .lesson-card:nth-child(3) .card-icon{background:var(--amber);}
+  .lesson-card h3{font-size:1.1rem;font-weight:800;margin-bottom:2px;}
+  .lesson-card:nth-child(1) h3{color:var(--cyan);}
+  .lesson-card:nth-child(2) h3{color:var(--violet);}
+  .lesson-card:nth-child(3) h3{color:var(--amber);}
+  .lesson-card .subtitle{font-size:0.78rem;color:var(--text-muted);font-weight:600;margin-bottom:12px;}
+  .lesson-card p{font-size:0.95rem;line-height:1.75;color:var(--text-secondary);}
+  .lesson-card p + p{margin-top:12px;}
+  .formula-box{background:var(--bg-soft);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin:14px 0;font-family:'JetBrains Mono',monospace;font-size:0.86rem;text-align:center;line-height:1.9;color:var(--text-primary);overflow-x:auto;}
+  .formula-box .note{color:var(--text-muted);font-size:0.76rem;}
+  .callout{background:var(--blue-light);border:1px solid rgba(37,99,235,0.18);border-left:3px solid var(--blue);border-radius:10px;padding:12px 14px;margin-top:14px;font-size:0.86rem;line-height:1.65;color:var(--text-secondary);}
+  .callout strong{color:var(--blue);font-weight:800;}
+
+  .poisson-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:28px;box-shadow:var(--shadow-sm);border-left:4px solid var(--amber);margin-bottom:24px;}
+  .poisson-card h3{font-size:1.15rem;font-weight:800;color:var(--amber);margin-bottom:4px;}
+  .poisson-card .subtitle{font-size:0.78rem;color:var(--text-muted);font-weight:600;margin-bottom:12px;}
+  .poisson-card p{font-size:0.95rem;line-height:1.75;color:var(--text-secondary);}
+  .poisson-card p + p{margin-top:12px;}
+
+  .sigma-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:28px;box-shadow:var(--shadow-sm);border-left:4px solid var(--blue);margin-bottom:24px;}
+  .sigma-card h3{font-size:1.15rem;font-weight:800;color:var(--blue);margin-bottom:4px;}
+  .sigma-card .subtitle{font-size:0.78rem;color:var(--text-muted);font-weight:600;margin-bottom:12px;}
+  .sigma-card p{font-size:0.95rem;line-height:1.75;color:var(--text-secondary);}
+  .sigma-card p + p{margin-top:12px;}
+
+  .rework-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-sm);overflow:hidden;}
+  .rework-card .rework-header{padding:20px 28px;background:linear-gradient(135deg,#fdf2f8,#fff1f2);border-bottom:1px solid var(--border);}
+  .rework-card .rework-header h3{font-size:1.15rem;font-weight:800;color:var(--rose);display:flex;align-items:center;gap:8px;}
+  .rw-icon{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:var(--rose);color:#fff;font-size:0.8rem;font-weight:900;}
+  .rework-body{padding:24px 28px;}
+  .rework-body p{font-size:0.95rem;line-height:1.75;color:var(--text-secondary);margin-bottom:12px;}
+  .rework-body ul{list-style:none;padding:0;margin:14px 0;}
+  .rework-body ul li{padding:10px 0 10px 28px;position:relative;font-size:0.95rem;line-height:1.65;color:var(--text-secondary);}
+  .rework-body ul li::before{content:'';position:absolute;left:0;top:16px;width:12px;height:12px;border-radius:3px;}
+  .rework-body ul li:nth-child(1)::before{background:var(--cyan);}
+  .rework-body ul li:nth-child(2)::before{background:var(--violet);}
+  .rework-body ul li:nth-child(3)::before{background:var(--amber);}
+  .rework-body ul li:nth-child(4)::before{background:var(--orange);}
+  .rework-body ul li:nth-child(5)::before{background:var(--rose);}
+
+  .table-wrap{overflow-x:auto;margin:18px 0;}
+  .comparison-table{width:100%;min-width:640px;border-collapse:separate;border-spacing:0;border-radius:12px;overflow:hidden;font-size:0.9rem;border:1px solid var(--border);}
+  .comparison-table th{background:var(--bg-soft);padding:14px 16px;text-align:left;font-weight:800;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);border-bottom:2px solid var(--border);}
+  .comparison-table td{padding:12px 16px;border-bottom:1px solid var(--border);color:var(--text-secondary);}
+  .comparison-table tr:last-child td{border-bottom:none;}
+  .comparison-table td:first-child{font-weight:700;}
+  .hl-cyan{color:var(--cyan)!important;}
+  .hl-violet{color:var(--violet)!important;}
+  .hl-amber{color:var(--amber)!important;}
+  .chk{color:var(--emerald);font-weight:800;}
+  .crs{color:var(--text-muted);}
+
+  .footer{text-align:center;padding:24px 0 40px;font-size:0.8rem;color:var(--text-muted);border-top:1px solid var(--border);}
+  .sc-1{background:#0891b2;}.sc-2{background:#7c3aed;}.sc-3{background:#e11d48;}.sc-4{background:#059669;}.sc-5{background:#ea580c;}
+  .sc-6{background:#0d9488;}.sc-7{background:#9333ea;}.sc-8{background:#d97706;}.sc-9{background:#2563eb;}.sc-10{background:#be185d;}
+
+  @media(max-width:1000px){.totals-grid{grid-template-columns:repeat(3,1fr);}.derived-grid{grid-template-columns:repeat(2,1fr);}.lesson-grid{grid-template-columns:1fr;}}
+  @media(max-width:640px){
+    .container{padding:0 16px;}
+    .totals-grid{grid-template-columns:1fr 1fr;}
+    .derived-grid{grid-template-columns:1fr 1fr;}
+    .control-bar{flex-direction:column;gap:12px;align-items:stretch;}
+    .control-group{flex-wrap:wrap;justify-content:center;padding:12px 16px;}
+    .control-group input[type=range]{width:min(180px,46vw);}
+    .pipe-node{width:60px;height:78px;font-size:0.75rem;}
+    .pipe-node-bookend{width:52px;height:68px;}
+    .workings-body,.rework-body,.poisson-card,.sigma-card,.lesson-card{padding-left:18px;padding-right:18px;}
+    .step-working{padding:16px 14px;}
+  }
+  @media(prefers-reduced-motion:reduce){*{animation-duration:0.01ms!important;transition-duration:0.01ms!important;}.total-card:hover,.lesson-card:hover,.pipe-node:hover{transform:none;}}
+</style>
+</head>
+<body>
+<div class="hero"><div class="container hero-inner">
+  <div class="hero-badge"><span class="dot"></span> Lean Six Sigma - Master Black Belt Tool</div>
+  <h1>Process <span>Yield Calculator</span></h1>
+  <p>Traditional Yield, Throughput Yield and Rolled Throughput Yield across multi-step processes, with DPU, DPMO and sigma level from the Poisson defect model.</p>
+</div></div>
+<div class="container">
+  <div class="control-bar">
+    <div class="control-group"><label for="stepSlider">Process Steps:</label><input type="range" id="stepSlider" min="1" max="10" value="4"><div class="step-count-badge" id="stepCountBadge">4</div></div>
+    <div class="control-group units-control"><label for="startingUnits">Starting Units:</label><input type="number" id="startingUnits" min="1" step="1" value="100"></div>
+    <div class="control-group units-control"><label for="opportunities">Opportunities / Unit:</label><input type="number" id="opportunities" min="1" step="1" value="1"></div>
+    <div class="control-group shift-control"><input type="checkbox" id="shiftToggle" checked><label for="shiftToggle">Apply 1.5&sigma; shift</label></div>
+  </div>
+  <div class="pipeline-wrap" id="pipeline"></div>
+  <div class="pipe-caption">Node percentages show Throughput Yield (TPY) &mdash; the share of units through each step with no scrap and no rework.</div>
+  <div class="table-section">
+    <div class="table-header-bar">
+      <h2><span class="thb-icon">T</span> Process Step Data</h2>
+      <div class="legend">
+        <span><span class="legend-dot" style="background:var(--cyan);"></span>Y (Traditional)</span>
+        <span><span class="legend-dot" style="background:var(--violet);"></span>TPY (units)</span>
+        <span><span class="legend-dot" style="background:var(--amber);"></span>TPY (e&#8315;&#7496;&#7477;&#7448;)</span>
+      </div>
+    </div>
+    <div class="table-scroll">
+    <table class="data-table">
+      <thead><tr>
+        <th>Step</th>
+        <th>Units In</th>
+        <th class="input-col">Scrapped<span class="sub">units</span></th>
+        <th class="input-col">Reworked<span class="sub">units</span></th>
+        <th>Rework Scrap<span class="sub">subset of reworked</span></th>
+        <th>Defects<span class="sub">blank = scrap + rework</span></th>
+        <th>Units Out</th>
+        <th>DPU</th>
+        <th>Y<span class="sub">traditional</span></th>
+        <th>TPY<span class="sub">units</span></th>
+        <th>TPY<span class="sub">e^(-DPU)</span></th>
+      </tr></thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+    </div>
+  </div>
+  <div class="totals-grid" id="totalsGrid">
+    <div class="total-card tc-cyan"><div class="top-stripe"></div><div class="total-icon">Y</div><div class="total-label">Rolled Y</div><div class="total-sublabel">Traditional / final yield</div><div class="total-value" id="tFTY">--</div><div class="total-formula" id="tFTYf"></div></div>
+    <div class="total-card tc-violet"><div class="top-stripe"></div><div class="total-icon">R</div><div class="total-label">RTY</div><div class="total-sublabel">Rolled Throughput Yield</div><div class="total-value" id="tRTY">--</div><div class="total-formula" id="tRTYf"></div></div>
+    <div class="total-card tc-amber"><div class="top-stripe"></div><div class="total-icon">e</div><div class="total-label">RTY from DPU</div><div class="total-sublabel">e^(-&Sigma; DPU)</div><div class="total-value" id="tPoisson">--</div><div class="total-formula" id="tPoissonf"></div></div>
+    <div class="total-card tc-emerald"><div class="top-stripe"></div><div class="total-icon">D</div><div class="total-label">&Sigma; Step DPU</div><div class="total-sublabel">defects per unit entering each step</div><div class="total-value" id="tDPU">--</div><div class="total-formula" id="tDPUf"></div></div>
+    <div class="total-card tc-rose"><div class="top-stripe"></div><div class="total-icon">U</div><div class="total-label">Final Units Out</div><div class="total-sublabel">good units shipped</div><div class="total-value" id="tOut">--</div><div class="total-formula" id="tOutf"></div></div>
+  </div>
+  <div class="derived-grid">
+    <div class="total-card tc-teal"><div class="top-stripe"></div><div class="total-icon">N</div><div class="total-label">Normalized Yield</div><div class="total-sublabel">RTY^(1/n) - the average step</div><div class="total-value" id="tYnorm">--</div><div class="total-formula" id="tYnormf"></div></div>
+    <div class="total-card tc-orange"><div class="top-stripe"></div><div class="total-icon">H</div><div class="total-label">Hidden Factory Gap</div><div class="total-sublabel">Rolled Y minus RTY</div><div class="total-value" id="tGap">--</div><div class="total-formula" id="tGapf"></div></div>
+    <div class="total-card tc-blue"><div class="top-stripe"></div><div class="total-icon">M</div><div class="total-label">DPMO</div><div class="total-sublabel">defects per million opportunities</div><div class="total-value" id="tDPMO">--</div><div class="total-formula" id="tDPMOf"></div></div>
+    <div class="total-card tc-violet"><div class="top-stripe"></div><div class="total-icon">Z</div><div class="total-label">Sigma Level</div><div class="total-sublabel" id="sigmaSub">Z from DPMO, +1.5 shift</div><div class="total-value" id="tSigma">--</div><div class="total-formula" id="tSigmaf"></div></div>
+  </div>
+  <div class="assumptions">
+    <h3>Model assumptions</h3>
+    <ul>
+      <li>Units flow serially: <code>Units In</code> for a step is the previous step's <code>Units Out</code>. No parallel paths, no merges.</li>
+      <li><code>Rework Scrap</code> is a <em>subset</em> of <code>Reworked</code>, not an additional loss. Leave it at 0 to assume every reworked unit is repaired successfully and passes on.</li>
+      <li><code>Defects</code> counts non-conformances, which can exceed the number of defective units when a unit carries more than one. Left blank it falls back to <code>Scrapped + Reworked</code>, in which case DPU is a defective <em>rate</em> and <code>e^(-DPU)</code> adds no information beyond TPY.</li>
+      <li><code>&Sigma; Step DPU</code> sums rates measured on each step's own entering quantity, so it is not defects per <em>starting</em> unit. Both figures are shown on that card.</li>
+      <li>Every unit is inspected at every step; escapes and false accepts are not modelled.</li>
+    </ul>
+  </div>
+  <div class="workings-section">
+    <div class="workings-header" id="workingsToggle" role="button" tabindex="0" aria-expanded="true" aria-controls="workingsBody">
+      <h2><span class="wh-icon">W</span> Step-by-Step Workings and Formulas</h2>
+      <span class="toggle-icon">&#9660;</span>
+    </div>
+    <div class="workings-body" id="workingsBody"></div>
+  </div>
+  <div class="lesson-section">
+    <div class="lesson-title"><h2>Understanding <span>Yield Metrics</span></h2><p>A Lean Six Sigma guide to the metrics that reveal your true process capability</p></div>
+    <div class="lesson-grid">
+      <div class="lesson-card"><div class="card-icon">Y</div><h3>Y - Traditional Yield</h3><div class="subtitle">Also called Classic Yield or Final Yield</div><p>Traditional Yield measures the percentage of units that leave a step as good product. Reworked units count as good, because they did eventually pass. It is the simplest yield metric and the one most operations reports quote, but it has a critical blind spot: it says nothing about what it cost to get there.</p><div class="formula-box">Y = (Units In - Scrapped - Rework Scrap) / Units In<br><span class="note">Successfully reworked units count as good - the hidden factory</span></div><p>If 100 units enter and 5 are scrapped but 20 require rework, Y reports 95%. The 20% rework burden is invisible, creating the so-called hidden factory that erodes margins.</p><div class="callout"><strong>A note on FTY.</strong> Some sources call this First Time Yield; others use FTY to mean first-time-right, which is what this tool calls TPY. The two conventions are genuinely in circulation, so always check which one a report means. What is never in dispute: <em>First Pass Yield excludes rework</em>, so FPY is a synonym for TPY, never for this metric.</p></div>
+      <div class="lesson-card"><div class="card-icon">T</div><h3>TPY - Throughput Yield</h3><div class="subtitle">Also called First Pass Yield (FPY)</div><p>TPY counts only units that got through the step right the first time. If a unit needed rework to pass, it was not right the first time, and TPY reflects that reality. This is the yield an MBB actually reasons with.</p><div class="formula-box">TPY = (Units In - Scrapped - Reworked) / Units In<br><span class="note">Both scrap and rework reduce yield</span></div><p>Same example: TPY = (100 - 5 - 20) / 100 = <strong>75%</strong>. A dramatically different picture than 95%, and far more honest about true process capability. When multiplied across steps, this gives the Rolled Throughput Yield.</p></div>
+      <div class="lesson-card"><div class="card-icon">R</div><h3>RTY - Rolled Throughput Yield</h3><div class="subtitle">The probability of a clean run end to end</div><p>RTY multiplies the TPY of every step to give the probability that a unit traverses the <strong>entire</strong> process defect-free, with no rework at any stage.</p><div class="formula-box">RTY = TPY1 x TPY2 x ... x TPYn<br><span class="note">Multiplicative - small losses compound rapidly</span></div><p>Even with 95% TPY at each of 10 steps, RTY drops to about 60%. This compounding is why RTY is the most powerful metric for exposing systemic waste across a value stream.</p><div class="callout"><strong>Normalized Yield</strong> is its companion: Y<sub>norm</sub> = RTY^(1/n) answers "what is a typical step doing?" and makes processes with different step counts comparable.</div></div>
+    </div>
+    <div class="poisson-card">
+      <h3>The Poisson Yield Formula: Y = e to the power of negative DPU</h3>
+      <div class="subtitle">Using Euler's number to model defect probability</div>
+      <p>When we know the average Defects Per Unit (DPU) at a step, the Poisson distribution models the probability that a unit has zero defects:</p>
+      <div class="formula-box">DPU = Total Defects / Units In<br><br>TPY = e^(-DPU), where e &asymp; 2.71828 (Euler's number)<br><span class="note">The base of natural logarithms</span></div>
+      <p>The critical word is <strong>defects</strong>, not defectives. A defect is one non-conformance; a defective is a unit carrying at least one. One unit with three defects contributes 3 to the defect count and 1 to the defective count. That difference is the entire reason this method exists, and it is why this tool gives Defects its own input column rather than deriving it from the scrap and rework unit counts.</p>
+      <p>If you leave Defects blank, it falls back to <code>Scrapped + Reworked</code> &mdash; a count of defective <em>units</em>. In that case DPU is really the defective rate p, <code>e^(-DPU)</code> reduces to <code>e^(-(1 - TPY))</code>, and it will always read slightly <em>higher</em> than the unit-based TPY because <code>e^(-p) &ge; 1 - p</code> for every p. The column tells you nothing new until you record real defect counts. Enter them, and <code>e^(-DPU)</code> correctly falls <em>below</em> the unit-based TPY whenever units carry more than one defect.</p>
+      <p>For the overall process you can either multiply each step's Poisson yield or compute <code>e^(-&Sigma;DPU)</code>; both produce the same result, because <code>e^(-a) &times; e^(-b) = e^(-(a+b))</code>.</p>
+    </div>
+    <div class="sigma-card">
+      <h3>From DPMO to Sigma Level</h3>
+      <div class="subtitle">Normalising for complexity, then converting to Z</div>
+      <p>Yield alone cannot compare a two-part bracket with a two-thousand-part assembly. DPMO fixes that by dividing defects not by units but by <em>opportunities</em> &mdash; the number of ways a single unit could fail. Set Opportunities / Unit in the control bar to match your operational definition, and keep that definition stable, because DPMO is only comparable against itself.</p>
+      <div class="formula-box">DPO = Total Defects / (Total Units Inspected x Opportunities per Unit)<br>DPMO = DPO x 1,000,000<br><br>Z = NORMSINV(1 - DPO)<br>Sigma Level = Z + 1.5 (when the shift is applied)<br><span class="note">3.4 DPMO gives Z = 4.5, which becomes the familiar 6 sigma after the shift</span></div>
+      <p>The 1.5&sigma; shift is a convention, not a measurement. It exists because a process centred today drifts over weeks and months, and empirical work at Motorola suggested long-term performance sits about 1.5 standard deviations worse than a short-term study predicts. The toggle is deliberate: <strong>Z from your data is long-term; adding 1.5 reports the short-term equivalent</strong> that industry benchmark tables assume. Quote one or the other, say which, and never compare a shifted figure to an unshifted one.</p>
+    </div>
+    <div class="rework-card">
+      <div class="rework-header"><h3><span class="rw-icon">!</span> Rework Considerations in the Formulas</h3></div>
+      <div class="rework-body">
+        <p>How each metric treats rework is what fundamentally separates them and determines how honest they are about your process health:</p>
+        <ul>
+          <li><strong>Traditional Yield ignores rework entirely.</strong> A reworked unit that eventually passes is counted identically to one that passed perfectly the first time. This creates the dangerous hidden factory where rework costs, cycle time inflation, and resource consumption stay invisible to management.</li>
+          <li><strong>TPY and RTY penalize rework.</strong> Any unit requiring rework is treated as a failure at that step. This exposes the hidden factory and gives a truthful measure of process capability for improvement prioritization.</li>
+          <li><strong>The Poisson model counts every individual defect</strong> &mdash; but only if you feed it defect counts. If one unit has 3 defects found and corrected, it contributes 3 to Defects and 1 to Reworked. That is the highest-resolution view of process quality available, and it is why the Defects column is separate.</li>
+          <li><strong>Rework that fails becomes scrap.</strong> The Rework Scrap column captures units that entered rework and never came back. Left at zero, the model assumes every repair succeeds, which is optimistic in most real processes and worth checking before you quote a number.</li>
+          <li><strong>Rework inflates cycle time and cost without adding value.</strong> In Lean methodology, rework is pure waste (Muda). Even if a process shows 98% Traditional Yield, a low RTY reveals the true cost of poor quality as every rework loop consumes labor, materials, machine time, and floor space.</li>
+        </ul>
+        <div class="table-wrap">
+        <table class="comparison-table"><thead><tr><th>Metric</th><th>Counts Scrap</th><th>Counts Rework</th><th>Multi-Defect Sensitive</th><th>Best Application</th></tr></thead><tbody>
+          <tr><td class="hl-cyan">Y (Traditional)</td><td><span class="chk">Yes</span></td><td><span class="crs">No</span></td><td><span class="crs">No</span></td><td>Quick throughput check</td></tr>
+          <tr><td class="hl-violet">TPY / RTY</td><td><span class="chk">Yes</span></td><td><span class="chk">Yes</span></td><td><span class="crs">No</span></td><td>Process capability and DMAIC</td></tr>
+          <tr><td class="hl-amber">Y = e^(-DPU)</td><td><span class="chk">Yes</span></td><td><span class="chk">Yes</span></td><td><span class="chk">Only with real defect counts</span></td><td>Defect-sensitive Six Sigma analysis</td></tr>
+        </tbody></table>
+        </div>
+        <p>In practice, organizations pursuing Six Sigma excellence rely on RTY and the Poisson yield method because they expose the true cost of quality. A process might show 95% Traditional Yield but only 60% RTY. That gap &mdash; reported directly as the Hidden Factory Gap above &mdash; represents resources consumed by rework, retest, and repair that never appear in simple yield numbers but directly erode margin, delivery performance, and customer satisfaction.</p>
+      </div>
+    </div>
+  </div>
+  <div class="footer">Process Yield Calculator - Lean Six Sigma Quality Metrics Tool</div>
+</div>
+<script>
+var COLORS=['#0891b2','#7c3aed','#e11d48','#059669','#ea580c','#0d9488','#9333ea','#d97706','#2563eb','#be185d'];
+var slider=document.getElementById('stepSlider');
+var countBadge=document.getElementById('stepCountBadge');
+var startingUnitsInput=document.getElementById('startingUnits');
+var oppsInput=document.getElementById('opportunities');
+var shiftToggle=document.getElementById('shiftToggle');
+var tableBody=document.getElementById('tableBody');
+var numSteps=4;
+var savedData={};
+
+slider.addEventListener('input',function(){numSteps=parseInt(slider.value,10);countBadge.textContent=numSteps;buildTable();});
+startingUnitsInput.addEventListener('input',calculate);
+oppsInput.addEventListener('input',calculate);
+shiftToggle.addEventListener('change',calculate);
+
+var wToggle=document.getElementById('workingsToggle');
+var wBody=document.getElementById('workingsBody');
+function toggleWorkings(){
+  wToggle.classList.toggle('open');
+  wBody.classList.toggle('show');
+  wToggle.setAttribute('aria-expanded',wBody.classList.contains('show')?'true':'false');
+}
+wToggle.addEventListener('click',toggleWorkings);
+wToggle.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleWorkings();}});
+
+/* Clamp any user entry to a non-negative number. min="0" only constrains the
+   spinner - it does not stop a typed or pasted negative value. */
+function readNum(el){
+  if(!el)return 0;
+  var v=parseFloat(el.value);
+  if(isNaN(v))return 0;
+  return Math.max(0,v);
+}
+function isBlank(el){return !el||el.value===null||String(el.value).trim()==='';}
+
+/* Inverse standard normal CDF (Acklam's rational approximation). */
+function normsinv(p){
+  if(p<=0)return -Infinity;
+  if(p>=1)return Infinity;
+  var a=[-3.969683028665376e+01,2.209460984245205e+02,-2.759285104469687e+02,1.383577518672690e+02,-3.066479806614716e+01,2.506628277459239e+00];
+  var b=[-5.447609879822406e+01,1.615858368580409e+02,-1.556989798598866e+02,6.680131188771972e+01,-1.328068155288572e+01];
+  var c=[-7.784894002430293e-03,-3.223964580411365e-01,-2.400758277161838e+00,-2.549732539343734e+00,4.374664141464968e+00,2.938163982698783e+00];
+  var d=[7.784695709041462e-03,3.224671290700398e-01,2.445134137142996e+00,3.754408661907416e+00];
+  var pl=0.02425,ph=1-pl,q,r;
+  if(p<pl){
+    q=Math.sqrt(-2*Math.log(p));
+    return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+  }
+  if(p<=ph){
+    q=p-0.5;r=q*q;
+    return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
+  }
+  q=Math.sqrt(-2*Math.log(1-p));
+  return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmt(n){return Number(n.toFixed(4)).toString();}
+
+function buildTable(){
+  var rows=tableBody.querySelectorAll('tr.data-row');
+  for(var i=0;i<rows.length;i++){
+    savedData[i]={
+      scrapped:rows[i].querySelector('.scrap-input').value,
+      reworked:rows[i].querySelector('.rework-input').value,
+      rwscrap:rows[i].querySelector('.rwscrap-input').value,
+      defects:rows[i].querySelector('.defect-input').value
+    };
+  }
+  var html='';
+  for(var i=0;i<numSteps;i++){
+    var d=savedData[i]||{};
+    var sc=d.scrapped||'',rw=d.reworked||'',rs=d.rwscrap||'',df=d.defects||'';
+    html+='<tr class="data-row" data-step="'+i+'">'+
+      '<td><div class="step-pill sc-'+(i+1)+'">'+(i+1)+'</div></td>'+
+      '<td><span class="auto-cell units-in-cell">--</span></td>'+
+      '<td><input class="edit-input scrap-input" type="number" min="0" step="1" placeholder="0" value="'+sc+'" aria-label="Units scrapped at step '+(i+1)+'"></td>'+
+      '<td><input class="edit-input rework-input" type="number" min="0" step="1" placeholder="0" value="'+rw+'" aria-label="Units reworked at step '+(i+1)+'"></td>'+
+      '<td><input class="edit-input rwscrap-input" type="number" min="0" step="1" placeholder="0" value="'+rs+'" aria-label="Reworked units later scrapped at step '+(i+1)+'"></td>'+
+      '<td><input class="edit-input defect-input" type="number" min="0" step="1" placeholder="auto" value="'+df+'" aria-label="Total defects found at step '+(i+1)+'"></td>'+
+      '<td><span class="auto-cell units-out-cell">--</span></td>'+
+      '<td><span class="result-badge dpu-badge dpu-cell">--</span></td>'+
+      '<td><span class="result-badge fty-badge fty-cell">--</span></td>'+
+      '<td><span class="result-badge ipy-badge ipy-cell">--</span></td>'+
+      '<td><span class="result-badge poisson-badge poisson-cell">--</span></td>'+
+    '</tr>'+
+    '<tr class="warn-row" data-step="'+i+'" style="display:none;"><td colspan="11"><div class="warn-box"></div></td></tr>';
+  }
+  tableBody.innerHTML=html;
+  var inputs=tableBody.querySelectorAll('input');
+  for(var j=0;j<inputs.length;j++){inputs[j].addEventListener('input',calculate);}
+  calculate();
+}
+
+function calculate(){
+  var startUnits=Math.max(0,parseFloat(startingUnitsInput.value)||0);
+  var opps=Math.max(1,parseFloat(oppsInput.value)||1);
+  var rows=tableBody.querySelectorAll('tr.data-row');
+  var warnRows=tableBody.querySelectorAll('tr.warn-row');
+  var results=[];
+
+  for(var i=0;i<rows.length;i++){
+    var scrapEl=rows[i].querySelector('.scrap-input');
+    var reworkEl=rows[i].querySelector('.rework-input');
+    var rwScrapEl=rows[i].querySelector('.rwscrap-input');
+    var defectEl=rows[i].querySelector('.defect-input');
+
+    var scrapped=readNum(scrapEl);
+    var reworked=readNum(reworkEl);
+    var reworkScrap=readNum(rwScrapEl);
+    var defectsEntered=!isBlank(defectEl);
+    var defectives=scrapped+reworked;
+    var defects=defectsEntered?readNum(defectEl):defectives;
+
+    var unitsIn=i===0?startUnits:Math.max(0,results[i-1].unitsOut);
+    var warnings=[];
+    if(unitsIn>0&&defectives>unitsIn){
+      warnings.push('Scrapped + Reworked = '+fmt(defectives)+' exceeds the '+fmt(unitsIn)+' units entering this step. Yields are floored at 0% and the figures below are not meaningful.');
+    }
+    if(reworkScrap>reworked){
+      warnings.push('Rework Scrap ('+fmt(reworkScrap)+') exceeds Reworked ('+fmt(reworked)+'). Rework Scrap is a subset of reworked units, not an additional loss.');
+    }
+    if(defectsEntered&&defects<defectives){
+      warnings.push('Defects ('+fmt(defects)+') is fewer than defective units ('+fmt(defectives)+'). A defective unit carries at least one defect, so Defects can never be the smaller number.');
+    }
+    var effRworkScrap=Math.min(reworkScrap,reworked);
+    var unitsOut=Math.max(0,unitsIn-scrapped-effRworkScrap);
+    var goodFirst=Math.max(0,unitsIn-scrapped-reworked);
+    var y=unitsIn>0?unitsOut/unitsIn:0;
+    var tpy=unitsIn>0?goodFirst/unitsIn:0;
+    var dpu=unitsIn>0?defects/unitsIn:0;
+    var tpyDpu=unitsIn>0?Math.exp(-dpu):0;
+
+    results.push({unitsIn:unitsIn,scrapped:scrapped,reworked:reworked,reworkScrap:effRworkScrap,
+      defects:defects,defectsEntered:defectsEntered,defectives:defectives,unitsOut:unitsOut,
+      goodFirst:goodFirst,y:y,tpy:tpy,dpu:dpu,tpyDpu:tpyDpu,warnings:warnings});
+
+    var live=unitsIn>0;
+    rows[i].querySelector('.units-in-cell').textContent=live?fmt(unitsIn):'--';
+    rows[i].querySelector('.units-out-cell').textContent=live?fmt(unitsOut):'--';
+    rows[i].querySelector('.dpu-cell').textContent=live?dpu.toFixed(4):'--';
+    rows[i].querySelector('.fty-cell').textContent=live?(y*100).toFixed(2)+'%':'--';
+    rows[i].querySelector('.ipy-cell').textContent=live?(tpy*100).toFixed(2)+'%':'--';
+    rows[i].querySelector('.poisson-cell').textContent=live?(tpyDpu*100).toFixed(2)+'%':'--';
+
+    scrapEl.classList.toggle('invalid',unitsIn>0&&defectives>unitsIn);
+    reworkEl.classList.toggle('invalid',unitsIn>0&&defectives>unitsIn);
+    rwScrapEl.classList.toggle('invalid',reworkScrap>reworked);
+    defectEl.classList.toggle('invalid',defectsEntered&&defects<defectives);
+
+    var wr=warnRows[i];
+    var box=wr.querySelector('.warn-box');
+    if(warnings.length){
+      box.innerHTML=warnings.map(function(w){return '<span><strong>Check step '+(i+1)+':</strong> '+esc(w)+'</span>';}).join('');
+      wr.style.display='';
+      rows[i].classList.add('has-warn');
+    }else{
+      box.innerHTML='';
+      wr.style.display='none';
+      rows[i].classList.remove('has-warn');
+    }
+  }
+
+  var valid=[];
+  for(var k=0;k<results.length;k++){if(results[k].unitsIn>0)valid.push(results[k]);}
+
+  var ids=['tFTY','tRTY','tPoisson','tDPU','tOut','tYnorm','tGap','tDPMO','tSigma'];
+  if(valid.length===0){
+    for(var z=0;z<ids.length;z++){
+      document.getElementById(ids[z]).textContent='--';
+      document.getElementById(ids[z]+'f').textContent='';
+    }
+    document.getElementById('workingsBody').innerHTML='<p style="color:#94a3b8;padding:8px;">Enter starting units and defect data to see workings.</p>';
+    buildPipeline(results);return;
+  }
+
+  var rolledY=1,rty=1,sumDPU=0,totalDefects=0,totalOppUnits=0;
+  for(var m=0;m<valid.length;m++){
+    rolledY*=valid[m].y;
+    rty*=valid[m].tpy;
+    sumDPU+=valid[m].dpu;
+    totalDefects+=valid[m].defects;
+    totalOppUnits+=valid[m].unitsIn;
+  }
+  var pOverall=Math.exp(-sumDPU);
+  var finalOut=results[results.length-1].unitsOut;
+  var yNorm=Math.pow(rty,1/valid.length);
+  var gapPts=(rolledY-rty)*100;
+  var dpuPerStart=startUnits>0?totalDefects/startUnits:0;
+  var totalOpps=totalOppUnits*opps;
+  var dpo=totalOpps>0?totalDefects/totalOpps:0;
+  var dpmo=dpo*1000000;
+  var shift=shiftToggle.checked;
+
+  document.getElementById('tFTY').textContent=(rolledY*100).toFixed(2)+'%';
+  document.getElementById('tRTY').textContent=(rty*100).toFixed(2)+'%';
+  document.getElementById('tPoisson').textContent=(pOverall*100).toFixed(2)+'%';
+  document.getElementById('tDPU').textContent=sumDPU.toFixed(4);
+  document.getElementById('tOut').textContent=fmt(finalOut);
+  document.getElementById('tYnorm').textContent=(yNorm*100).toFixed(2)+'%';
+  document.getElementById('tGap').textContent=gapPts.toFixed(2)+' pts';
+  document.getElementById('tDPMO').textContent=dpmo>=1000?Math.round(dpmo).toLocaleString():dpmo.toFixed(2);
+
+  var sigmaText,sigmaFormula;
+  if(dpo<=0){
+    sigmaText=shift?'≥ 6.00':'≥ 4.50';
+    sigmaFormula='No defects recorded - sigma level is unbounded above. Record real defect counts for a finite Z.';
+  }else if(dpo>=1){
+    sigmaText='--';
+    sigmaFormula='Every opportunity is defective (DPO >= 1); Z is undefined.';
+  }else{
+    var zLong=normsinv(1-dpo);
+    var zShown=shift?zLong+1.5:zLong;
+    sigmaText=zShown.toFixed(2)+'σ';
+    sigmaFormula='Z = NORMSINV(1 - '+dpo.toFixed(6)+') = '+zLong.toFixed(3)+(shift?' ; +1.5 shift = '+zShown.toFixed(3):' (long-term, no shift)');
+  }
+  document.getElementById('tSigma').textContent=sigmaText;
+  document.getElementById('tSigmaf').textContent=sigmaFormula;
+  document.getElementById('sigmaSub').textContent=shift?'Z from DPMO, +1.5 shift (short-term)':'Z from DPMO, no shift (long-term)';
+
+  var yParts=[],rtyParts=[],dpuParts=[];
+  for(var n=0;n<valid.length;n++){
+    yParts.push(valid[n].y.toFixed(4));
+    rtyParts.push(valid[n].tpy.toFixed(4));
+    dpuParts.push(valid[n].dpu.toFixed(4));
+  }
+  document.getElementById('tFTYf').textContent=yParts.join(' x ')+' = '+rolledY.toFixed(4)+'  (= final units / starting units)';
+  document.getElementById('tRTYf').textContent=rtyParts.join(' x ')+' = '+rty.toFixed(4);
+  document.getElementById('tPoissonf').textContent='e^(-('+sumDPU.toFixed(4)+')) = '+pOverall.toFixed(4);
+  document.getElementById('tDPUf').textContent=dpuParts.join(' + ')+' = '+sumDPU.toFixed(4)+'  |  per starting unit: '+fmt(totalDefects)+' / '+fmt(startUnits)+' = '+dpuPerStart.toFixed(4);
+  document.getElementById('tOutf').textContent=fmt(startUnits)+' -> '+fmt(finalOut)+' ('+(startUnits>0?((finalOut/startUnits)*100).toFixed(1):'0')+'% throughput)';
+  document.getElementById('tYnormf').textContent=rty.toFixed(4)+'^(1/'+valid.length+') = '+yNorm.toFixed(4);
+  document.getElementById('tGapf').textContent=(rolledY*100).toFixed(2)+'% - '+(rty*100).toFixed(2)+'% = '+gapPts.toFixed(2)+' points of hidden factory';
+  document.getElementById('tDPMOf').textContent=fmt(totalDefects)+' / ('+fmt(totalOppUnits)+' x '+fmt(opps)+') x 1e6 = '+dpmo.toFixed(2);
+
+  var wHTML='';
+  for(var p=0;p<results.length;p++){
+    var r=results[p];
+    if(r.unitsIn<=0){
+      wHTML+='<div class="step-working skipped-working"><h3>Step '+(p+1)+'</h3>'+
+        '<div class="formula-line wrap"><span class="lbl">No units reached this step, so it is excluded from the rolled calculations.</span></div></div>';
+      continue;
+    }
+    wHTML+='<div class="step-working"><h3>Step '+(p+1)+'</h3>';
+    wHTML+='<div class="formula-line wrap"><span class="lbl">Units In:</span> <span class="v-cyan">'+fmt(r.unitsIn)+'</span> | <span class="lbl">Scrapped:</span> <span class="v-rose">'+fmt(r.scrapped)+'</span> | <span class="lbl">Reworked:</span> <span class="v-amber">'+fmt(r.reworked)+'</span> | <span class="lbl">Rework Scrap:</span> <span class="v-orange">'+fmt(r.reworkScrap)+'</span> | <span class="lbl">Defects:</span> <span class="v-teal">'+fmt(r.defects)+'</span>'+(r.defectsEntered?'':' <span class="lbl">(auto = scrap + rework)</span>')+' | <span class="lbl">Units Out:</span> <span class="v-emerald">'+fmt(r.unitsOut)+'</span></div>';
+    wHTML+='<div class="formula-line"><span class="lbl">Y</span> = ('+fmt(r.unitsIn)+' - '+fmt(r.scrapped)+' - '+fmt(r.reworkScrap)+') / '+fmt(r.unitsIn)+' = '+fmt(r.unitsOut)+' / '+fmt(r.unitsIn)+' = <span class="v-cyan">'+(r.y*100).toFixed(2)+'%</span></div>';
+    wHTML+='<div class="formula-line"><span class="lbl">TPY</span> = ('+fmt(r.unitsIn)+' - '+fmt(r.scrapped)+' - '+fmt(r.reworked)+') / '+fmt(r.unitsIn)+' = '+fmt(r.goodFirst)+' / '+fmt(r.unitsIn)+' = <span class="v-violet">'+(r.tpy*100).toFixed(2)+'%</span></div>';
+    wHTML+='<div class="formula-line"><span class="lbl">DPU</span> = '+fmt(r.defects)+' / '+fmt(r.unitsIn)+' = <span class="v-amber">'+r.dpu.toFixed(4)+'</span></div>';
+    wHTML+='<div class="formula-line"><span class="lbl">TPY from DPU</span> = e^(-'+r.dpu.toFixed(4)+') = <span class="v-amber">'+(r.tpyDpu*100).toFixed(2)+'%</span></div>';
+    if(!r.defectsEntered){
+      wHTML+='<div class="working-note">Defects were not entered, so DPU is the defective rate and e^(-DPU) is a restatement of TPY, not independent evidence. Record actual defect counts to make this line informative.</div>';
+    }
+    if(r.warnings.length){
+      wHTML+='<div class="working-warn">'+r.warnings.map(esc).join('<br>')+'</div>';
+    }
+    wHTML+='</div>';
+  }
+  wHTML+='<div class="step-working overall-working"><h3>Overall Process Totals</h3>';
+  wHTML+='<div class="formula-line"><span class="lbl">Rolled Y</span> = '+yParts.join(' x ')+' = <span class="v-cyan">'+(rolledY*100).toFixed(2)+'%</span></div>';
+  wHTML+='<div class="formula-line"><span class="lbl">RTY</span> = '+rtyParts.join(' x ')+' = <span class="v-violet">'+(rty*100).toFixed(2)+'%</span></div>';
+  wHTML+='<div class="formula-line"><span class="lbl">&Sigma; Step DPU</span> = '+dpuParts.join(' + ')+' = <span class="v-amber">'+sumDPU.toFixed(4)+'</span></div>';
+  wHTML+='<div class="formula-line"><span class="lbl">RTY from DPU</span> = e^(-('+sumDPU.toFixed(4)+')) = <span class="v-amber">'+(pOverall*100).toFixed(2)+'%</span></div>';
+  wHTML+='<div class="formula-line"><span class="lbl">Normalized Yield</span> = '+rty.toFixed(4)+'^(1/'+valid.length+') = <span class="v-teal">'+(yNorm*100).toFixed(2)+'%</span></div>';
+  wHTML+='<div class="formula-line"><span class="lbl">Hidden Factory Gap</span> = '+(rolledY*100).toFixed(2)+'% - '+(rty*100).toFixed(2)+'% = <span class="v-orange">'+gapPts.toFixed(2)+' pts</span></div>';
+  wHTML+='<div class="formula-line"><span class="lbl">DPMO</span> = '+fmt(totalDefects)+' / ('+fmt(totalOppUnits)+' x '+fmt(opps)+') x 1,000,000 = <span class="v-blue">'+dpmo.toFixed(2)+'</span></div>';
+  wHTML+='<div class="formula-line wrap"><span class="lbl">Sigma Level</span> = <span class="v-violet">'+sigmaText+'</span> <span class="lbl">'+esc(sigmaFormula)+'</span></div>';
+  wHTML+='<div class="working-note">Rolled Y always equals final units divided by starting units, because each step\'s Units In is the previous step\'s Units Out and the product telescopes: '+fmt(finalOut)+' / '+fmt(startUnits)+' = '+rolledY.toFixed(4)+'. That it can be computed without ever looking at rework is exactly why it hides the hidden factory.</div>';
+  wHTML+='<div class="working-note">e^(-a) x e^(-b) = e^(-(a+b)), so the product of the individual Poisson yields equals e^(-(&Sigma; Step DPU)).</div>';
+  wHTML+='<div class="working-note">&Sigma; Step DPU sums rates measured on each step\'s own entering quantity, so it is not defects per starting unit. Per starting unit: '+fmt(totalDefects)+' / '+fmt(startUnits)+' = '+dpuPerStart.toFixed(4)+'.</div>';
+  wHTML+='</div>';
+  document.getElementById('workingsBody').innerHTML=wHTML;
+  buildPipeline(results);
+}
+
+function buildPipeline(results){
+  var el=document.getElementById('pipeline');
+  var html='<div class="pipe-step"><div class="pipe-node-bookend" style="background:#334155;">IN<span class="node-yield">'+(results[0]?fmt(results[0].unitsIn):'?')+'</span></div></div>';
+  for(var i=0;i<results.length;i++){
+    var r=results[i];var color=COLORS[i%COLORS.length];
+    var pct=r.unitsIn>0?(r.tpy*100).toFixed(0)+'%':'?';
+    html+='<div class="pipe-step"><span class="pipe-arrow">&#8594;</span><div class="pipe-node" style="background:'+color+';box-shadow:0 4px 14px '+color+'33;">';
+    html+='<span class="node-label">STEP '+(i+1)+'</span><span class="node-yield">'+pct+'</span>';
+    html+='<span class="node-units">'+(r.unitsOut>0?fmt(r.unitsOut)+' out':'')+'</span></div></div>';
+  }
+  var lastOut=results.length>0?results[results.length-1].unitsOut:0;
+  html+='<div class="pipe-step"><span class="pipe-arrow">&#8594;</span><div class="pipe-node-bookend" style="background:#059669;">OUT<span class="node-yield">'+fmt(lastOut)+'</span></div></div>';
+  el.innerHTML=html;
+}
+
+buildTable();
+wToggle.classList.add('open');
+wBody.classList.add('show');
+</script>
+</body>
+</html>
